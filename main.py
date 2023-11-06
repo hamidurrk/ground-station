@@ -43,7 +43,28 @@ def get_gradient_color(signal_strength):
     red, green, blue = selected_color.rgb
     return int(red * 255), int(green * 255), int(blue * 255), 128  # 50% transparency
 
-def create_marker_image(signal_strength):
+def get_cluster_color(label):
+    # Define the range of signal strength values
+    min_label = 0  # Worst signal strength
+    max_label = 10   # Best signal strength
+
+    # Normalize signal strength to the range [0, 1]
+    normalized_label = (label - min_label) / (max_label - min_label)
+
+    # Create a gradient between red and green with 10 steps
+    gradient_colors = list(Color("#FF3333").range_to(Color("blue"), 10))
+
+    # Calculate the index in the gradient based on the normalized signal strength
+    color_index = int(normalized_label * (len(gradient_colors) - 1))
+
+    # Get the color from the gradient
+    selected_color = gradient_colors[color_index]
+
+    # Convert the color to RGB and add transparency
+    red, green, blue = selected_color.rgb
+    return int(red * 255), int(green * 255), int(blue * 255), 128  # 50% transparency
+
+def create_marker_image(signal_strength, label=-1):
     # Create a custom marker image using Pillow
     marker_image = Image.new("RGBA", (32, 32), (0, 0, 0, 0))  # Create a transparent image
 
@@ -53,10 +74,11 @@ def create_marker_image(signal_strength):
     # Calculate the circle's position and size
     circle_center = (16, 16)  # Center of the image
     circle_radius = 4  # 8px diameter circle, so radius is half of that
-
-    # Get the gradient color based on signal strength
-    circle_color = get_gradient_color(signal_strength)
-
+    if(label != -1):
+        # Get the gradient color based on signal strength
+        circle_color = get_gradient_color(signal_strength)
+    else:
+        circle_color = get_cluster_color(label)
     # Draw a circle with gradient color
     marker_draw.ellipse(
         [circle_center[0] - circle_radius, circle_center[1] - circle_radius,
@@ -68,20 +90,15 @@ def create_marker_image(signal_strength):
     marker_icon = ImageTk.PhotoImage(marker_image)
     return marker_icon
 
-def load_data():
-    # Load your data
-    # ...
-    df = pd.read_csv('data/f_data_0.csv')
-    # df = df[df['altitude'] == 30]
-    # take random 2000 samples
-    # df = df.sample(2000)
+def load_data(csv_file):
+    df = pd.read_csv(f'{csv_file}')
     return df
 
 def put_marker(df, map_widget):
     # Place markers on the map with gradient colors
     for row in df.itertuples():
         marker_lat, marker_lng = row.lat, row.lng
-        marker_icon = create_marker_image(row.csq)
+        marker_icon = create_marker_image(row.csq, row.Cluster)
         map_widget.set_marker(marker_lat, marker_lng, icon=marker_icon)
 
 class App(customtkinter.CTk):
@@ -120,18 +137,26 @@ class App(customtkinter.CTk):
         # ============ frame_left ============
 
         self.frame_left.grid_rowconfigure(2, weight=1)
-
+        
+        self.entrylow = customtkinter.CTkEntry(master=self.frame_left,
+                                            placeholder_text="Low Val")
+        self.entrylow.grid(row=0, column=0, sticky="we", pady=(20, 0), padx=(10, 10))
+        
+        self.entryhigh = customtkinter.CTkEntry(master=self.frame_left,
+                                            placeholder_text="High Val")
+        self.entryhigh.grid(row=0, column=1, sticky="we", pady=(20, 0), padx=(20, 20))
+        
         # Run Plan button
         self.button_1 = customtkinter.CTkButton(master=self.frame_left,
                                                 text="Run Plan",
                                                 command=self.run_plan)
-        self.button_1.grid(pady=(20, 0), padx=(20, 20), row=0, column=0)
+        self.button_1.grid(pady=(20, 0), padx=(20, 20), row=1, column=0)
 
         # Clear Plan button
         self.button_2 = customtkinter.CTkButton(master=self.frame_left,
                                                 text="Clear Plan",
                                                 command=self.clear_marker_event)
-        self.button_2.grid(pady=(20, 0), padx=(20, 20), row=1, column=0)
+        self.button_2.grid(pady=(20, 0), padx=(20, 20), row=1, column=1)
 
         
         # View Plot button
@@ -204,12 +229,15 @@ class App(customtkinter.CTk):
     def run_plan(self):
         # Accumulate the lattitude and longitude from the marker list and send it to the server
         positions = []
+        low=int(self.entrylow.get())
+        high=int(self.entryhigh.get())
+        print(f'{low}, {high}')
         for marker in self.marker_list:
             d = {"lat": marker.position[0], "lng": marker.position[1]}
             positions.append(d)
         print(positions)
         df = pd.DataFrame(positions)
-        df['csq'] = [random.randint(12, 19) + 0.99 for _ in range(len(df))]
+        df['csq'] = [random.randint(low, high) + 0.99 for _ in range(len(df))]
         df['lat'] = df['lat'].round(7)
         df['lng'] = df['lng'].round(7)
         df.to_csv('data/output_data.csv', index=False)
@@ -235,8 +263,11 @@ class App(customtkinter.CTk):
             self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)
     
     def view_heatmap(self):
-        df = load_data()
+        df = load_data('optimiser/output_clusters.csv')
         put_marker(df, self.map_widget)
+        
+    # def view_cluster(self):
+    #     df = load_data()
 
     def on_closing(self, event=0):
         self.destroy()

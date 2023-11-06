@@ -14,7 +14,9 @@ def filter(filename):
     df.to_csv(f'data/f_{filename}.csv', index=False)
 
     print(df)
-    
+
+filter('ajaira')
+
 def create_csv_from_list_of_dict(lod, low_lim, up_lim):
     df = pd.DataFrame(lod)
     df['csq'] = [random.randint(low_lim, up_lim) + 0.99 for _ in range(len(df))]
@@ -83,5 +85,25 @@ def filter_by_coor():
     df = df[df['lng'] >= 90.36] 
     df = df[df['lng'] <= 90.4] 
     print(df)
-    # Save the filtered DataFrame to a new CSV file
+    
     df.to_csv(output_file, index=False)
+
+def remove_by_bounding_box():               #needs a bit more work
+    input_file = 'data/f_data_0.csv'  
+    output_file = 'data/f_data_1.csv' 
+
+    start_lat = 23.7390973
+    start_lng = 90.3949544
+    end_lat = 23.7293607 
+    end_lng = 90.4028937
+
+
+    df = pd.read_csv(input_file)
+
+    cut_df = df[(df['lat'] < 23.7390973) & (df['lat'] > 23.7293607)]
+    
+    result_df = df.merge(cut_df, on=['lat'], how='left', indicator=True).query('_merge == "left_only"').drop('_merge', axis=1)
+
+    print(result_df)
+    
+    result_df.to_csv(output_file, index=False)
