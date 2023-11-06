@@ -15,7 +15,7 @@ def generate_color_gradient(start_color, end_color, num_steps):
     return rgb_colors
 
 # Read the CSV file
-df = pd.read_csv('optimizer/f_data_0.csv') 
+df = pd.read_csv('optimizer/final_data.csv') 
 
 # Extract the three columns as input for clustering
 X = df[['lat', 'lng', 'csq']].values

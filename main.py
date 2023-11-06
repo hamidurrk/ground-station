@@ -152,15 +152,7 @@ class App(customtkinter.CTk):
 
         self.frame_left.grid_rowconfigure(25, weight=1)
         
-        # self.entrylow = customtkinter.CTkEntry(master=self.frame_left,
-        #                                     placeholder_text="Low Val")
-        # self.entrylow.grid(row=0, column=0, sticky="we", pady=(20, 0), padx=(10, 10))
-        
-        # self.entryhigh = customtkinter.CTkEntry(master=self.frame_left,
-        #                                     placeholder_text="High Val")
-        # self.entryhigh.grid(row=0, column=1, sticky="we", pady=(20, 0), padx=(20, 20))
-        
-        # ============ frame_left optimizer ============
+                # ============ frame_left optimizer ============
         r = 1
         self.logo_label = customtkinter.CTkLabel(self.frame_left, text="Ground Station", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=20, pady=(20, 10))
@@ -195,11 +187,11 @@ class App(customtkinter.CTk):
         self.button_4.grid(pady=(20, 20), padx=(20, 20), row=4+r, column=0)
         
         
-         # ============ frame_left Mission Planner ============
+                # ============ frame_left Mission Planner ============
         
         self.subframe_planner = customtkinter.CTkFrame(master=self.frame_left)
         self.subframe_planner.grid(row=5+r, column=0, padx=(20, 20), pady=(20, 0), sticky="nsew", rowspan=5)
-        self.subframe_planner_label = customtkinter.CTkLabel(master=self.subframe_planner, text="planner Functions")
+        self.subframe_planner_label = customtkinter.CTkLabel(master=self.subframe_planner, text="Mission Planner Functions")
         self.subframe_planner_label.grid(row=5+r, column=0, columnspan=1, padx=10, pady=10, sticky="")
         
         # Run Plan button
@@ -214,7 +206,7 @@ class App(customtkinter.CTk):
                                                 command=self.clear_marker_event)
         self.button_6.grid(pady=(20, 20), padx=(20, 20), row=7+r, column=0)
 
-        
+                # ============ frame_left misc. ============
         # Section for selecting map type
         self.map_label = customtkinter.CTkLabel(self.frame_left, text="Tile Server:", anchor="w")
         self.map_label.grid(row=21+r, column=0, padx=(20, 20), pady=(20, 0))
@@ -357,7 +349,8 @@ class App(customtkinter.CTk):
         put_marker(df, self.map_widget)
         
     def view_cluster(self):
-        
+        file_path = os.path.join(BASE_DIR, 'optimizer', 'ms_clustering.py')
+        subprocess.run(['python', file_path])
         df_all = load_data('optimizer/output_clusters_color.csv')
         generate_cluster_image(df_all, self.map_widget)
 
