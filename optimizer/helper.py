@@ -6,12 +6,10 @@ lod = [{'lat': 23.729834537496934, 'lng': 90.41024689175083}, {'lat': 23.7302666
 
 def filter(filename):
     df = pd.read_csv(f'data/{filename}.csv')
-
     df = df.dropna()
     df['csq'] = df['csq'].str.replace('"', '').str.replace(',', '.').astype(float)
     df = df.drop_duplicates(subset=['lat', 'lng'])
     df.to_csv(f'data/f_{filename}.csv', index=False)
-
     print(df)
 
 def create_csv_from_list_of_dict(lod, low_lim, up_lim):

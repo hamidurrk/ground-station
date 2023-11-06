@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from colour import Color
-from sklearn.cluster import MeanShift, estimate_bandwidth
+from sklearn.cluster import MeanShift
 
 def generate_color_gradient(start_color, end_color, num_steps):
     # Generate a gradient of colors from start_color to end_color
@@ -15,7 +15,7 @@ def generate_color_gradient(start_color, end_color, num_steps):
     return rgb_colors
 
 # Read the CSV file
-df = pd.read_csv('data/f_data_0.csv') 
+df = pd.read_csv('optimizer/f_data_0.csv') 
 
 # Extract the three columns as input for clustering
 X = df[['lat', 'lng', 'csq']].values
@@ -36,21 +36,6 @@ df['label'] = labels
 
 # Save the DataFrame with cluster labels to a new CSV file
 df.to_csv('optimizer/output_clusters.csv', index=False)
-
-# unique_labels = np.unique(labels)
-
-# for label in unique_labels:
-#     cluster_center = cluster_centers[label]
-#     associated_rows = df[df['cluster'] == label]
-#     print(f'Cluster Center {cluster_center} belongs to Label {label} and has {len(associated_rows)} associated rows.')
-
-# # Print the results
-# print(f'Number of clusters: {len(np.unique(labels))}')
-# print(np.unique(labels))
-# print('Cluster centers:')
-
-# center_dict = {row[2]: row[:2] for row in cluster_centers}
-# print(center_dict)
 
 center_dict = {}
 
@@ -82,10 +67,10 @@ df.to_csv('optimizer/color_data.csv', index=False)
 
 
 # Read the original data
-df_data = pd.read_csv('optimizer/output_clusters.csv')  # Replace 'original_data.csv' with the actual file path
+df_data = pd.read_csv('optimizer/output_clusters.csv')  
 
 # Read the label-color relationship data
-df_labels = pd.read_csv('optimizer/color_data.csv')  # Replace 'label_color_data.csv' with the actual file path
+df_labels = pd.read_csv('optimizer/color_data.csv')  
 
 # Create a dictionary mapping labels to colors
 label_color_dict = dict(zip(df_labels['label'], df_labels['color']))
