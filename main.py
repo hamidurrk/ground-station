@@ -20,7 +20,7 @@ import subprocess
 
 # Absolute path to the directory containing this file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SERVER_URL = "http://localhost:8080" if ENV == "dev" else "https://tether-s2ng.onrender.com"
+SERVER_URL = "http://localhost:8080" if ENV == "dev" else "https://fourth-iteration.onrender.com"
 
 customtkinter.set_default_color_theme("blue")
 
