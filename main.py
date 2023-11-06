@@ -137,12 +137,13 @@ class App(customtkinter.CTk):
         self.grid_rowconfigure(0, weight=1)  # Both panels will resize in the y direction when the screen is resized
 
         # Left panel attach
-        self.frame_left = customtkinter.CTkFrame(master=self, width=150, corner_radius=0, fg_color=None)
+        self.frame_left = customtkinter.CTkFrame(master=self, width=100, corner_radius=0, fg_color=None)
         self.frame_left.grid(row=0, column=0, padx=0, pady=0, sticky="nsew")
 
         # Right panel attach
-        self.frame_right = customtkinter.CTkFrame(master=self, corner_radius=0)
+        self.frame_right = customtkinter.CTkTabview(master=self, corner_radius=10)
         self.frame_right.grid(row=0, column=1, rowspan=1, pady=0, padx=0, sticky="nsew")
+        
 
         # ============ frame_left ============
 
@@ -201,22 +202,24 @@ class App(customtkinter.CTk):
 
         
         # ============ frame_right ============
-
-        self.frame_right.grid_rowconfigure(1, weight=1)
-        self.frame_right.grid_rowconfigure(0, weight=0)
-        self.frame_right.grid_columnconfigure(0, weight=1)
-        self.frame_right.grid_columnconfigure(1, weight=0)
-        self.frame_right.grid_columnconfigure(2, weight=1)
-
-        self.map_widget = TkinterMapView(self.frame_right, corner_radius=0)
+        
+        self.frame_right.add("Map")  
+        self.frame_right.add("Plot")
+        self.frame_right.tab("Map").grid_rowconfigure(1, weight=1)
+        self.frame_right.tab("Map").grid_rowconfigure(0, weight=0)
+        self.frame_right.tab("Map").grid_columnconfigure(0, weight=1)
+        self.frame_right.tab("Map").grid_columnconfigure(1, weight=0)
+        self.frame_right.tab("Map").grid_columnconfigure(2, weight=1)
+        
+        self.map_widget = TkinterMapView(self.frame_right.tab("Map"), corner_radius=0)
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
 
-        self.entry = customtkinter.CTkEntry(master=self.frame_right,
+        self.entry = customtkinter.CTkEntry(master=self.frame_right.tab("Map"),
                                             placeholder_text="type address")
         self.entry.grid(row=0, column=0, sticky="we", padx=(12, 0), pady=12)
         self.entry.bind("<Return>", self.search_event)  # Run search_event() function on enter press
 
-        self.button_5 = customtkinter.CTkButton(master=self.frame_right,
+        self.button_5 = customtkinter.CTkButton(master=self.frame_right.tab("Map"),
                                                 text="Search",
                                                 width=90,
                                                 command=self.search_event)
@@ -243,7 +246,6 @@ class App(customtkinter.CTk):
             tower_lat, tower_lng= row.lat, row.lng
             self.tower_icon = ImageTk.PhotoImage(Image.open(os.path.join(BASE_DIR, "images", "network_tower.png")).resize((30, 30)))
             self.tower_marker = self.map_widget.set_marker(tower_lat, tower_lng, "____", icon=self.tower_icon)
-
             
     def add_marker(self, coords=None):
         marker = self.map_widget.set_marker(coords[0], coords[1], f"Point {len(self.marker_list) + 1}", icon=self.marker_icon)

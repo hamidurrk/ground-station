@@ -10,12 +10,9 @@ def filter(filename):
     df = df.dropna()
     df['csq'] = df['csq'].str.replace('"', '').str.replace(',', '.').astype(float)
     df = df.drop_duplicates(subset=['lat', 'lng'])
-
     df.to_csv(f'data/f_{filename}.csv', index=False)
 
     print(df)
-
-filter('ajaira')
 
 def create_csv_from_list_of_dict(lod, low_lim, up_lim):
     df = pd.DataFrame(lod)
