@@ -43,45 +43,8 @@ def get_gradient_color(signal_strength):
     # Convert the color to RGB and add transparency
     red, green, blue = selected_color.rgb
     return int(red * 255), int(green * 255), int(blue * 255), 128  # 50% transparency
-
-# def get_cluster_color(label):
-    # # Define the range of signal strength values
-    # min_label = 0  # Worst signal strength
-    # max_label = 10   # Best signal strength
-
-    # # Normalize signal strength to the range [0, 1]
-    # normalized_label = (label - min_label) / (max_label - min_label)
-
-    # # Create a gradient between red and green with 10 steps
-    # gradient_colors = list(Color("blue").range_to(Color("yellow"), 10))
-
-    # # Calculate the index in the gradient based on the normalized signal strength
-    # color_index = int(normalized_label * (len(gradient_colors) - 1))
-
-    # # Get the color from the gradient
-    # selected_color = gradient_colors[color_index]
-
-    # # Convert the color to RGB and add transparency
-    # red, green, blue = selected_color.rgb
-    # return int(red * 255), int(green * 255), int(blue * 255), 128  # 50% transparency
-    
-def get_cluster_color(label, num_clusters):
-    distinct_colors = [
-        (0, 0, 255),  # Blue
-        (0, 255, 0),  # Green
-        (255, 0, 0),  # Red
-        (255, 255, 0),  # Yellow
-        (0, 255, 255),  # Cyan
-        (255, 0, 255),  # Magenta
-        (128, 128, 128),  # Gray
-        (255, 165, 0),  # Orange
-        (0, 128, 0),  # Dark Green
-        (128, 0, 128),  # Purple
-    ]
-    
-    return distinct_colors[label % num_clusters]
-
-def create_marker_image(signal_strength, label=-1, cluster_count=0):
+   
+def create_marker_image(signal_strength):
     # Create a custom marker image using Pillow
     marker_image = Image.new("RGBA", (32, 32), (0, 0, 0, 0))  # Create a transparent image
 
@@ -91,11 +54,33 @@ def create_marker_image(signal_strength, label=-1, cluster_count=0):
     # Calculate the circle's position and size
     circle_center = (16, 16)  # Center of the image
     circle_radius = 4  # 8px diameter circle, so radius is half of that
-    if(cluster_count == 0):
-        circle_color = get_gradient_color(signal_strength)
-    else:
-        circle_color = get_cluster_color(label, cluster_count)
-        print(circle_color)
+
+    circle_color = get_gradient_color(signal_strength)
+
+    # Draw a circle with gradient color
+    marker_draw.ellipse(
+        [circle_center[0] - circle_radius, circle_center[1] - circle_radius,
+         circle_center[0] + circle_radius, circle_center[1] + circle_radius],
+        fill=circle_color
+    )
+
+    # Convert the Pillow image to a PhotoImage for use in tkinter
+    marker_icon = ImageTk.PhotoImage(marker_image)
+    return marker_icon
+
+def create_cluster_points(color):
+    red, green, blue = color
+    # Create a custom marker image using Pillow
+    marker_image = Image.new("RGBA", (32, 32), (0, 0, 0, 0))  # Create a transparent image
+
+    # Create a drawing context
+    marker_draw = ImageDraw.Draw(marker_image)
+
+    # Calculate the circle's position and size
+    circle_center = (16, 16)  # Center of the image
+    circle_radius = 4  # 8px diameter circle, so radius is half of that
+    circle_color = int(red * 255), int(green * 255), int(blue * 255), 128
+    print(circle_color)
     # Draw a circle with gradient color
     marker_draw.ellipse(
         [circle_center[0] - circle_radius, circle_center[1] - circle_radius,
@@ -115,9 +100,16 @@ def put_marker(df, map_widget):
     # Place markers on the map with gradient colors
     for row in df.itertuples():
         marker_lat, marker_lng = row.lat, row.lng
-        marker_icon = create_marker_image(row.csq, row.Cluster, 7)
-        print(row.Cluster)
+        marker_icon = create_marker_image(row.csq)
         map_widget.set_marker(marker_lat, marker_lng, icon=marker_icon)
+        
+def generate_cluster_image(df_all, map_widget):
+    for row in df_all.itertuples():
+        marker_lat, marker_lng, marker_color= row.lat, row.lng, eval(row.color)
+        marker_icon = create_cluster_points(marker_color)
+        map_widget.set_marker(marker_lat, marker_lng, icon=marker_icon)
+        
+
 
 class App(customtkinter.CTk):
 
@@ -182,7 +174,17 @@ class App(customtkinter.CTk):
                                                 text="View Heatmap",
                                                 command=self.view_heatmap)
         self.button_3.grid(pady=(20, 0), padx=(20, 20), row=2, column=0)
-
+        
+        self.button_3 = customtkinter.CTkButton(master=self.frame_left,
+                                                text="View Cluster",
+                                                command=self.view_cluster)
+        self.button_3.grid(pady=(20, 0), padx=(20, 20), row=2, column=1)
+        
+        self.button_3 = customtkinter.CTkButton(master=self.frame_left,
+                                                text="View Tower",
+                                                command=self.view_optimized_towers)
+        self.button_3.grid(pady=(120, 0), padx=(20, 20), row=2, column=0)
+        
         # Section for selecting map type
         self.map_label = customtkinter.CTkLabel(self.frame_left, text="Tile Server:", anchor="w")
         self.map_label.grid(row=3, column=0, padx=(20, 20), pady=(20, 0))
@@ -232,9 +234,15 @@ class App(customtkinter.CTk):
 
         # Load marker icons
         self.marker_icon = ImageTk.PhotoImage(Image.open(os.path.join(BASE_DIR, "images", "marker.png")).resize((40, 40)))
-        self.drone_icon = ImageTk.PhotoImage(Image.open(os.path.join(BASE_DIR, "images", "drone.png")).resize((40, 40)))
+        # self.drone_icon = ImageTk.PhotoImage(Image.open(os.path.join(BASE_DIR, "images", "drone.png")).resize((40, 40)))
 
-        self.droneMarker = self.map_widget.set_marker(droneLat, droneLng, "Drone", icon=self.drone_icon)
+        # self.droneMarker = self.map_widget.set_marker(droneLat, droneLng, "Drone", icon=self.drone_icon)
+        
+    def generate_towers(self, df_towers, map_widget):
+        for row in df_towers.itertuples():
+            tower_lat, tower_lng= row.lat, row.lng
+            self.tower_icon = ImageTk.PhotoImage(Image.open(os.path.join(BASE_DIR, "images", "network_tower.png")).resize((30, 30)))
+            self.tower_marker = self.map_widget.set_marker(tower_lat, tower_lng, "____", icon=self.tower_icon)
 
             
     def add_marker(self, coords=None):
@@ -285,9 +293,13 @@ class App(customtkinter.CTk):
         put_marker(df, self.map_widget)
         
     def view_cluster(self):
-        df = load_data('optimiser/color_data.csv')
-        put_marker(df, self.map_widget)
+        df_all = load_data('optimizer/output_clusters_color.csv')
+        generate_cluster_image(df_all, self.map_widget)
 
+    def view_optimized_towers(self):
+        df_towers = load_data('optimizer/color_data.csv')
+        self.generate_towers(df_towers, self.map_widget)
+        
     def on_closing(self, event=0):
         self.destroy()
 
