@@ -3,6 +3,11 @@ ENV = "prod"  # Set to "dev" or "prod" to change the environment
 import customtkinter
 from tkintermapview import TkinterMapView
 from PIL import Image, ImageTk, ImageDraw
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
+from scipy.interpolate import griddata
+import csv
 import os
 import requests
 import json
@@ -11,7 +16,6 @@ import random
 import threading
 import pandas as pd
 from colour import Color
-import matplotlib.pyplot as plt
 import subprocess
 
 # Absolute path to the directory containing this file
@@ -113,6 +117,8 @@ def filter():
     df['csq'] = df['csq'].str.replace('"', '').str.replace(',', '.').astype(float)
     df = df.drop_duplicates(subset=['lat', 'lng'])
     df.to_csv('optimizer/final_data.csv', index=False)
+    
+
 
 class App(customtkinter.CTk):
 
@@ -226,11 +232,18 @@ class App(customtkinter.CTk):
         
         self.frame_right.add("Map")  
         self.frame_right.add("Plot")
+        
         self.frame_right.tab("Map").grid_rowconfigure(1, weight=1)
         self.frame_right.tab("Map").grid_rowconfigure(0, weight=0)
         self.frame_right.tab("Map").grid_columnconfigure(0, weight=1)
         self.frame_right.tab("Map").grid_columnconfigure(1, weight=0)
         self.frame_right.tab("Map").grid_columnconfigure(2, weight=1)
+        
+        self.frame_right.tab("Plot").grid_rowconfigure(1, weight=1)
+        self.frame_right.tab("Plot").grid_rowconfigure(0, weight=0)
+        self.frame_right.tab("Plot").grid_columnconfigure(0, weight=1)
+        self.frame_right.tab("Plot").grid_columnconfigure(1, weight=0)
+        self.frame_right.tab("Plot").grid_columnconfigure(2, weight=1)
         
         self.map_widget = TkinterMapView(self.frame_right.tab("Map"), corner_radius=0)
         self.map_widget.grid(row=1, rowspan=1, column=0, columnspan=3, sticky="nswe", padx=(0, 0), pady=(0, 0))
@@ -272,13 +285,69 @@ class App(customtkinter.CTk):
             tower_lat, tower_lng= row.lat, row.lng
             self.tower_icon = ImageTk.PhotoImage(Image.open(os.path.join(BASE_DIR, "images", "network_tower.png")).resize((30, 30)))
             self.tower_marker = self.map_widget.set_marker(tower_lat, tower_lng, "____", icon=self.tower_icon)
-            
+    
     def add_marker(self, coords=None):
         marker = self.map_widget.set_marker(coords[0], coords[1], f"Point {len(self.marker_list) + 1}", icon=self.marker_icon)
         self.marker_list.append(marker)
 
     def search_event(self, event=None):
         self.map_widget.set_address(self.entry.get())
+    
+    def plot_data(self):
+        x = []
+        y = []
+        signal_strength = []
+
+        with open('optimizer/final_data.csv', 'r') as file:
+            reader = csv.reader(file)
+            next(reader)  
+            for row in reader:
+                x.append(float(row[0]))
+                y.append(float(row[1]))
+                signal_strength.append(float(row[2]))
+                
+        x = np.array(x)
+        y = np.array(y)
+        signal_strength = np.array(signal_strength)
+
+        grid_x, grid_y = np.mgrid[min(x):max(x):100j, min(y):max(y):100j]
+
+        grid_z = griddata((x, y), signal_strength, (grid_x, grid_y), method='cubic')
+
+        plt.figure(figsize=(10, 8))
+        ax = plt.axes(projection='3d')
+        ax.plot_surface(grid_x, grid_y, grid_z, cmap='plasma')
+        # plt.show()
+        plt.savefig('plots/plot.png', dpi=300, bbox_inches='tight')
+        plot_image = customtkinter.CTkImage(Image.open("plots/plot.png"), size=(800, 800))
+        image = customtkinter.CTkLabel(self.frame_right.tab("Plot"), image=plot_image, text="")
+        image.grid(row=0, column=0)
+        
+    def view_plt(self):
+        x = []
+        y = []
+        signal_strength = []
+
+        with open('optimizer/final_data.csv', 'r') as file:
+            reader = csv.reader(file)
+            next(reader)  
+            for row in reader:
+                x.append(float(row[0]))
+                y.append(float(row[1]))
+                signal_strength.append(float(row[2]))
+                
+        x = np.array(x)
+        y = np.array(y)
+        signal_strength = np.array(signal_strength)
+
+        grid_x, grid_y = np.mgrid[min(x):max(x):100j, min(y):max(y):100j]
+
+        grid_z = griddata((x, y), signal_strength, (grid_x, grid_y), method='cubic')
+
+        plt.figure(figsize=(10, 8))
+        ax = plt.axes(projection='3d')
+        ax.plot_surface(grid_x, grid_y, grid_z, cmap='plasma')
+        plt.show()
         
     def raw_load(self):
         target_location = os.path.join(BASE_DIR, "raw")
@@ -342,6 +411,11 @@ class App(customtkinter.CTk):
         subprocess.run(['python', file_path])
         df_all = load_data('optimizer/output_clusters_color.csv')
         generate_cluster_image(df_all, self.map_widget)
+        self.plot_data()
+        self.threed_plot = customtkinter.CTkButton(master=self.frame_right.tab("Plot"),
+                                                text="Show 3D Plot",
+                                                command=self.view_plt)
+        self.threed_plot.grid(pady=(0, 0), padx=(20, 20), row=0, column=1, sticky="ne")
 
     def view_optimized_towers(self):
         df_towers = load_data('optimizer/color_data.csv')
