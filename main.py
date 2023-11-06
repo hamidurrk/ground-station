@@ -305,24 +305,13 @@ class App(customtkinter.CTk):
 
     def run_plan(self):
         # Accumulate the lattitude and longitude from the marker list and send it to the server
-        # positions = []
-        # low=int(self.entrylow.get())
-        # high=int(self.entryhigh.get())
-        # print(f'{low}, {high}')
-        # for marker in self.marker_list:
-        #     d = {"lat": marker.position[0], "lng": marker.position[1]}
-        #     positions.append(d)
-        # print(positions)
-        # df = pd.DataFrame(positions)
-        # df['csq'] = [random.randint(low, high) + 0.99 for _ in range(len(df))]
-        # df['lat'] = df['lat'].round(7)
-        # df['lng'] = df['lng'].round(7)
-        # df.to_csv('data/output_data.csv', index=False)
-        
+        positions = []
+        for marker in self.marker_list:
+            d = {"lat": marker.position[0], "lng": marker.position[1]}
+            positions.append(d)
         # make a request to the server
-        # response = requests.post(f"{SERVER_URL}/drone-control/plan", json=positions)
-        # print(response.content)
-        pass 
+        response = requests.post(f"{SERVER_URL}/drone-control/plan", json=positions)
+        print(response.content)
     
     def clear_marker_event(self):
         for marker in self.marker_list:
