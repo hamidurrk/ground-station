@@ -370,6 +370,8 @@ class App(customtkinter.CTk):
     
     def reset(self):
         # Upon reset, reboot tile server and destry all markers
+        self.map_widget.set_address("Dhaka")
+        self.map_option_menu.set("Google normal") 
         self.map_widget.set_tile_server("https://mt0.google.com/vt/lyrs=m&hl=en&x={x}&y={y}&z={z}&s=Ga", max_zoom=22)
         self.map_widget.delete_all_marker() 
     
