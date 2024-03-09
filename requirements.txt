@@ -27,3 +27,4 @@ six==1.16.0
 tkintermapview==1.29
 tzdata==2023.3
 urllib3==2.0.5
+scipy==1.12.0
