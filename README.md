@@ -1,17 +1,3 @@
-
-python -m venv venv
-
-
-
-
-./venv/Scripts/activate
-
-
-
-
-pip install -r requirements.txt
-
-
 # Network Tower Location Estimation Using Mean Shift Clustering
 
 This project aims to estimate network tower locations using the Mean Shift clustering algorithm based on signal strength measurements collected by a robot at various locations. The software provides visualization tools to analyze signal strength data and identify areas with poor network coverage.
